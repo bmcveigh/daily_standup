@@ -1,0 +1,135 @@
+<?php
+
+/**
+ * @file
+ * The main module file.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function daily_standup_menu() {
+  $items['admin/daily-standup'] = array(
+    'title' => 'Daily Standup Home',
+    'description' => 'Write your entries for the Daily Standup.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_daily_standup_form'),
+    'access arguments' => array('access administration pages'),
+  );
+  $items['admin/daily-standup/log'] = array(
+    'title' => 'Daily Standup Log',
+    'description' => 'View log entries for the Daily Standup.',
+    'page callback' => '_daily_standup_log',
+    'access arguments' => array('access administration pages'),
+  );
+  
+  return $items;
+}
+
+/**
+ * The form for the Daily Standup module.
+ */
+function _daily_standup_form($form, &$form_state) {
+  
+  $form['intro'] = array(
+    '#type' => 'markup',
+    '#markup' => '<h1>' . t('Scrum meetings are designed to last for 15 minutes. This tool will help you describe your current progress in the right amount of time.') . '</h1>',
+  );
+  
+  $form['view_log'] = array(
+    '#type' => 'markup',
+    '#markup' => l('View Log Entries', 'admin/daily-standup/log'),
+  );
+  
+  $form['yesterday'] = array(
+    '#type' => 'textarea',
+    '#title' => t('What did you work on yesterday?'),
+    '#required' => TRUE,
+  );
+  
+  $form['today'] = array(
+    '#type' => 'textarea',
+    '#title' => t('What are you working on today?'),
+    '#required' => TRUE,
+  );
+  
+  $form['problems'] = array(
+    '#type' => 'textarea',
+    '#title' => t('What problems are you having facing forward?'),
+    '#required' => TRUE,
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  
+  $form['#submit'][] = '_daily_standup_submit';
+  
+    if (isset($form_state['values']) && !empty($form_state['values'])) {
+      $markup = '<br />Here are your results:<br />';
+      $markup .= t('<strong>Yesterday</strong>: @yesterday<br />', array('@yesterday' => $form_state['values']['yesterday']));
+      $markup .= t('<strong>Today</strong>: @today<br />', array('@today' => $form_state['values']['today']));
+      $markup .= t('<strong>Problems</strong>: @problems<br />', array('@problems' => $form_state['values']['problems']));
+
+
+      $form['results'] = array(
+        '#type' => 'markup',
+        '#markup' => $markup,
+      );
+      
+      $id = db_insert('daily_standup') // Table name no longer needs {}
+        ->fields(array(
+          'yesterday' => $form_state['values']['yesterday'],
+          'today' => $form_state['values']['today'],
+          'problems' => $form_state['values']['problems'],
+          'user' => $GLOBALS['user']->name,
+          'date' => time(),
+        ))
+        ->execute();
+      
+      if (isset($id)) {
+        drupal_set_message('Saved');
+      } 
+      else {
+        drupal_set_message('Could not save to db', 'error');
+      }
+      
+  }
+  
+  return $form;
+}
+
+/**
+ * Submit handler
+ */
+function _daily_standup_submit($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Page callback to get the page log
+ */
+function _daily_standup_log() {
+  $output = '';
+  
+  $query = db_select('daily_standup', 'd')
+    ->fields('d')
+    ->orderBy('date', 'DESC')
+    ->execute();
+  
+  $result = $query->fetchAll();
+  
+  $headers = array('What I worked on yesterday','What I worked on today','Problems/Showstoppers','Username', 'Submitted', 'Actions');
+  
+  $rows = array();
+  
+  foreach ($result as $object) {
+    $rows[] = array($object->yesterday, $object->today, $object->problems, $object->user, date('m-d-Y h:i a', $object->date), l('Edit', 'admin/daily-standup/edit/' . $object->id));
+  }
+  
+  $output .= theme('table', array('header' => $headers, 'rows' => $rows));
+  
+  return $output;
+  
+}

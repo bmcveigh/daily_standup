@@ -1,0 +1,5 @@
+name = Daily Standup
+description = A forum that helps you organize what you're going to say in the Scrum meeting.
+package = Pakorasoft
+core = 7.x
+files[] = daily_standup.module

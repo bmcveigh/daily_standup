@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * @file
+ * The main module file.
+ */
+
+/**
+ * Implements hook_schema().
+ *
+ * Available data types:
+ * @link http://drupal.org/node/159605
+ */
+function daily_standup_schema() {
+  $schema['daily_standup'] = array(
+    'description' => 'This table contains a log of your daily scrum me',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The unique identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'yesterday' => array(
+        'description' => 'What did you do yesterday?',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'today' => array(
+        'description' => 'What did you do today?',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'problems' => array(
+        'description' => 'What problems are you encountering, moving forward?',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'user' => array(
+        'description' => 'The username',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'date' => array(
+        'description' => 'The date the entry was created.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
