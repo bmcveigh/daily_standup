@@ -113,14 +113,63 @@ function _daily_standup_submit($form, &$form_state) {
 function _daily_standup_log() {
   $output = '';
   
+  // Check if there is sorting request
+  if(isset($_GET['sort']) && isset($_GET['order'])){
+    // Sort it Ascending or Descending?
+    if($_GET['sort'] == 'asc') {
+      $sort = 'ASC';
+    }
+    else {
+      $sort = 'DESC';
+    }
+     // Which column will be sorted
+     switch($_GET['order']){
+       case 'What I worked on yesterday':
+         $order = 'yesterday';
+         break;
+       case 'What I worked on today':
+         $order = 'today';
+         break;
+       case 'Problems/Showstoppers':
+         $order = 'problems';
+         break;
+       case 'Username':
+         $order = 'user';
+         break;
+       case 'Submitted':
+         $order = 'date';
+         break;
+       default:
+         $order = 'date';
+     }
+   }
+   else {
+     // Default sort
+     $sort = 'DESC';
+     $order = ' date';
+   }
+  
+  
+  
   $query = db_select('daily_standup', 'd')
     ->fields('d')
-    ->orderBy('date', 'DESC')
+    ->extend('TableSort')
+    ->orderBy($order, $sort)
+    ->extend('PagerDefault')
+    ->limit(10)
     ->execute();
+  
   
   $result = $query->fetchAll();
   
-  $headers = array('What I worked on yesterday','What I worked on today','Problems/Showstoppers','Username', 'Submitted', 'Actions');
+  $headers = array(
+    array('data' => t('What I worked on yesterday'), 'field' => 'yesterday'),
+    array('data' => t('What I worked on today'), 'field' => 'today'),
+    array('data' => t('Problems/Showstoppers'), 'field' => 'problems'),
+    array('data' => t('Username'), 'field' => 'user'),
+    array('data' => t('Submitted'), 'field' => 'date'),
+    array('data' => t('Actions')),
+  );
   
   $rows = array();
   
